@@ -1,4 +1,4 @@
-describe('express-adapter', () => {
+describe('connect-adapter', () => {
     it('must work', () => {
         //
     })

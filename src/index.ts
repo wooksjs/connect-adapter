@@ -1,2 +1,2 @@
-export * from './express-adapter'
-export * from './wooks-express'
+export * from './connect-adapter'
+export * from './wooks-connect'

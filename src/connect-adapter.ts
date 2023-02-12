@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { createHttpContext, createWooksResponder, useHttpContext } from '@wooksjs/event-http'
-import { Express, Request } from 'express'
-import { ServerResponse } from 'http'
+import { Server } from 'connect'
+import { IncomingMessage, ServerResponse } from 'http'
 
 const methods = [
-    'get', 'post', 'delete', 'put', 'patch', 'options', 'head', 'all',
+    'use',
 ]
 
-export function applyExpressAdapter(app: Express) {
+export function applyConnectAdapter(app: Server) {
     const responder = createWooksResponder()
 
     function useWooksDecorator(fn: () => unknown) {
@@ -28,7 +28,7 @@ export function applyExpressAdapter(app: Express) {
     app.use(wooksContext)
 
     for (const m of methods) {
-        const defFn: (...args: any[]) => void = (app[m as keyof Express] as (...args: any[]) => void).bind(app)
+        const defFn: (...args: any[]) => void = (app[m as keyof Server] as (...args: any[]) => void).bind(app)
         const newFn: (...args: any[]) => void = ((...args: Parameters<typeof defFn>) => {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-unsafe-return
             return defFn(...args.map(a => typeof a === 'function' ? useWooksDecorator(a as (() => unknown)) : a))
@@ -37,12 +37,13 @@ export function applyExpressAdapter(app: Express) {
     }
 }
 
-function wooksContext(req: Request, res: ServerResponse, next: (err?: unknown) => void) {
-    const { store } = createHttpContext({ req, res })
-    store('routeParams').value = new Proxy({}, {
-        get(target, prop, receiver) {
-            return req.params && req.params[prop as keyof typeof req.params]
-        },
-    })
+function wooksContext(req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) {
+    // const { store } = 
+    createHttpContext({ req, res })
+    // store('routeParams').value = new Proxy({}, {
+    //     get(target, prop, receiver) {
+    //         return req.params && req.params[prop as keyof typeof req.params]
+    //     },
+    // })
     next()
 }

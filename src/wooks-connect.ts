@@ -1,15 +1,15 @@
 import { createHttpContext, HttpError, WooksHttp } from '@wooksjs/event-http'
-import Express from 'express'
+import Connect, { Server as ConnectServer, NextHandleFunction } from 'connect'
 import { IncomingMessage, Server, ServerResponse } from 'http'
 
-export class WooksExpress extends WooksHttp {
-    constructor(protected expressApp: Express.Application, protected opts?: { raise404?: boolean }) {
+export class WooksConnect extends WooksHttp {
+    constructor(protected connectServer: ConnectServer, protected opts?: { raise404?: boolean }) {
         super()
-        expressApp.use(this.getServerCb() as unknown as () => Express.RequestHandler)
+        connectServer.use(this.getServerCb() as  NextHandleFunction)
     }
 
     public async listen(...args: Parameters<Server['listen']>) {
-        const server = this.server = this.expressApp.listen(...args)
+        const server = this.server = this.connectServer.listen(...args)
         return new Promise((resolve, reject) => {
             server.once('listening', resolve)
             server.once('error', reject)
@@ -17,7 +17,7 @@ export class WooksExpress extends WooksHttp {
     }
 
     getServerCb() {
-        return async (req: IncomingMessage, res: ServerResponse, next?: Express.NextFunction) => {
+        return (async (req: IncomingMessage, res: ServerResponse, next?: Connect.NextFunction) => {
             const { restoreCtx, clearCtx } = createHttpContext({ req, res })
             const handlers = this.wooks.lookup(req.method as string, req.url as string)
             if (handlers) {
@@ -41,6 +41,6 @@ export class WooksExpress extends WooksHttp {
                     next()
                 }
             }    
-        }
+        })
     }    
 }
